@@ -65,7 +65,6 @@ app.get('/users/write', async (req, res) => {
     } catch (e) {
         return res.status(400).json({ message: 'Cannot write user file', error: e.message });
     }
-
 });
 
 app.get('/users/read', async (req, res) => {
@@ -76,7 +75,6 @@ app.get('/users/read', async (req, res) => {
         return res.status(400).json({ message: 'Cannot read user file', error: e.message });
     }
 });
-
 
 // Update one user api
 
