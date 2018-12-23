@@ -13,7 +13,9 @@ const router = new Router();
 // Resfull naming. cach dat ten.
 
 router.get('/classes', ClassController.getAll);
-//router.get('/users/create', UserController.addUser);
+router.get('/classes/:id', ClassController.getClassById);
 router.post('/classes', ClassController.addClass);
+router.put('/classes/:id', ClassController.updateClass);
+router.delete('/classes/:id', ClassController.deleteClass);
 
 export default router;

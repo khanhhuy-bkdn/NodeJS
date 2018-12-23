@@ -5,7 +5,14 @@ const UserController = {};
 UserController.getAll = async (req, res) => {
     try {
         const users = await User.find().sort('-dateAdded');
-        return res.json({
+        if (!user) {
+            return res.status(200).json({
+                isSuccess: true,
+                message: "Users is empty!"
+            });
+        }
+        return res.status(200).json({
+            isSuccess: true,
             users,
         });
     } catch (err) {
@@ -83,6 +90,12 @@ UserController.getUserById = async (req, res) => {
             });
         }
         const user = await User.findById(id);
+        if (!user) {
+            return res.status(200).json({
+                isSuccess: true,
+                message: "User is not exist!"
+            });
+        }
         return res.status(200).json({
             isSuccess: true,
             user: user
