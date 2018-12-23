@@ -4,7 +4,11 @@ const UserController = {};
 
 UserController.getAll = async (req, res) => {
     try {
+        // Cái này mình có thể viết lại như này: const users = await User.find();
+        // Catch error nó sẽ bắt hết tất cả eror trả về từ hàm của model như cái này .exec((err, users)
+        //
         await User.find().sort('-dateAdded').exec((err, users) => {
+            // Nên e không cần phải check error ở đây nữa nhé.
             if (err) {
                 res.status(500).send(err);
             }
@@ -82,9 +86,12 @@ UserController.getUserById = async (req, res) => {
         const id = req.params.id;
         if (!id) {
             return res.status(400).json({
+                // Định nghĩa lỗi cho rõ nhé: id is required
+                // Chưa trả về isSucess
                 message: 'Prams is null!'
             });
         }
+        // Cái này tương tự. E có thể viết const user = await User.findById(id); Cho gọn.
         await User.findById(id).exec((err, user) => {
             if (err) {
                 return res.status(500).send(err);
@@ -123,7 +130,8 @@ UserController.updateUser = async (req, res) => {
         }
         const user = new User({
             ...req.body
-        })
+        })// Thiếu chấm phẩy,
+        // Tương tự.
         await User.findOneAndUpdate(id, user, { new: true }, (err, user) => {
             if (err) {
                 return res.status(500).send(err);
@@ -145,9 +153,11 @@ UserController.deleteUser = async (req, res) => {
         const id = req.params.id;
         if (!id) {
             return res.status(400).json({
+                // Định nghĩa rõ ra.
                 message: 'Prams is null!'
             });
         }
+        // Tương tự.
         await User.findByIdAndRemove(id, (err, user) => {
             if (err) {
                 return res.status(500).send(err);
