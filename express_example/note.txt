@@ -1,0 +1,6 @@
+1. defind router
+2. defind controller
+3. router call controller
+3.1 controller call model to read and write data
+
+mongoose la framework xay dung dua tren mongo thao tac voi database.
