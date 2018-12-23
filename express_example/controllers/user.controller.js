@@ -4,17 +4,9 @@ const UserController = {};
 
 UserController.getAll = async (req, res) => {
     try {
-        // Cái này mình có thể viết lại như này: const users = await User.find();
-        // Catch error nó sẽ bắt hết tất cả eror trả về từ hàm của model như cái này .exec((err, users)
-        //
-        await User.find().sort('-dateAdded').exec((err, users) => {
-            // Nên e không cần phải check error ở đây nữa nhé.
-            if (err) {
-                res.status(500).send(err);
-            }
-            return res.json({
-                users,
-            });
+        const users = await User.find().sort('-dateAdded');
+        return res.json({
+            users,
         });
     } catch (err) {
         return res.status(400).json({
@@ -86,22 +78,18 @@ UserController.getUserById = async (req, res) => {
         const id = req.params.id;
         if (!id) {
             return res.status(400).json({
-                // Định nghĩa lỗi cho rõ nhé: id is required
-                // Chưa trả về isSucess
-                message: 'Prams is null!'
+                isSuccess: false,
+                message: 'id is required!'
             });
         }
-        // Cái này tương tự. E có thể viết const user = await User.findById(id); Cho gọn.
-        await User.findById(id).exec((err, user) => {
-            if (err) {
-                return res.status(500).send(err);
-            }
-            return res.status(200).json({
-                user: user
-            });
+        const user = await User.findById(id);
+        return res.status(200).json({
+            isSuccess: true,
+            user: user
         });
     } catch (err) {
         return res.status(400).json({
+            isSuccess: false,
             error: err
         });
     }
@@ -112,7 +100,8 @@ UserController.updateUser = async (req, res) => {
         const id = req.params.id;
         if (!id) {
             return res.status(400).json({
-                message: 'Prams is null!'
+                isSuccess: false,
+                message: 'id is required!'
             });
         }
         const { email, password } = req.body;
@@ -130,19 +119,16 @@ UserController.updateUser = async (req, res) => {
         }
         const user = new User({
             ...req.body
-        })// Thiếu chấm phẩy,
-        // Tương tự.
-        await User.findOneAndUpdate(id, user, { new: true }, (err, user) => {
-            if (err) {
-                return res.status(500).send(err);
-            }
-            return res.status(200).json({
-                message: 'Update success!',
-                user: user
-            });
+        });
+        const users = await User.findByIdAndUpdate(id, user, { new: true });
+        return res.status(200).json({
+            isSuccess: true,
+            message: 'Update success!',
+            users: users
         });
     } catch (err) {
         return res.status(400).json({
+            isSuccess: false,
             error: err
         });
     }
@@ -153,21 +139,18 @@ UserController.deleteUser = async (req, res) => {
         const id = req.params.id;
         if (!id) {
             return res.status(400).json({
-                // Định nghĩa rõ ra.
-                message: 'Prams is null!'
+                isSuccess: false,
+                message: 'id is required!'
             });
         }
-        // Tương tự.
-        await User.findByIdAndRemove(id, (err, user) => {
-            if (err) {
-                return res.status(500).send(err);
-            }
-            return res.status(200).json({
-                message: 'Delete success!'
-            });
+        await User.findByIdAndRemove(id);
+        return res.status(200).json({
+            isSuccess: true,
+            message: 'Delete success!'
         });
     } catch (err) {
         return res.status(400).json({
+            isSuccess: false,
             error: err
         });
     }
