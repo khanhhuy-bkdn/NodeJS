@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import UserController from '../controllers/user.controller';
+import validation from '../validation/user';
+import validate from'express-validation';
 const router = new Router();
 
 // Get all users
@@ -13,9 +15,9 @@ const router = new Router();
 // Resfull naming. cach dat ten.
 
 router.get('/users', UserController.getAll);
-router.get('/users/:id', UserController.getUserById);
-router.post('/users', UserController.addUser);
-router.put('/users/:id', UserController.updateUser);
-router.delete('/users/:id', UserController.deleteUser);
+router.get('/users/:id', validate(validation.getUserById), UserController.getUserById);
+router.post('/users', validate(validation.createUser), UserController.addUser);
+router.put('/users/:id', validate(validation.updateUser), UserController.updateUser);
+router.delete('/users/:id', validate(validation.deleteUser), UserController.deleteUser);
 
 export default router;
