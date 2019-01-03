@@ -1,4 +1,5 @@
 import Group from '../models/Group';
+import mongoose from 'mongoose';
 
 const GroupController = {};
 
@@ -30,7 +31,8 @@ GroupController.addGroup = async (req, res, next) => {
             return next(new Error('Author is require!'));
         }
         const group = new Group({
-            ...req.body
+            ...req.body,
+            deleteAt: null
         });
         await group.save();
         return res.status(201).json({
@@ -78,7 +80,8 @@ GroupController.updateGroup = async (req, res, next) => {
             return next(new Error('Author is require!'));
         }
         const group = new Group({
-            ...req.body
+            ...req.body,
+            deleteAt: null
         });
         group._id = id;
         await Group.findOneAndUpdate({ _id: id }, group, { new: true });
@@ -106,6 +109,68 @@ GroupController.deleteGroup = async (req, res, next) => {
         return res.status(200).json({
             isSuccess: true,
             message: 'Delete success!'
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+GroupController.addMemberGroup = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        if (!id) {
+            return next(new Error('id is require!'));
+        }
+        const { members } = req.body;
+        if (!members) {
+            return next(new Error('Members is require!'));
+        }
+        let group = await Group.findOne({ _id: id });
+        members.map((user, index) => {
+            if (group.members.indexOf(mongoose.Types.ObjectId(user)) < 0) {
+                group.members.push(user);
+            } else {
+                return next(new Error(`Members ${user} is exist!`));
+            }
+        });
+        await Group.update({ _id: id }, group);
+        return res.status(200).json({
+            isSuccess: true,
+            message: 'Add member success!',
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+GroupController.deleteMemberGroup = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const idmember = req.params.idmember;
+        if (!id) {
+            return next(new Error('id is require!'));
+        }
+        if (!idmember) {
+            return next(new Error('id member is require!'));
+        }
+        const group = await Group.findById(id);
+        if (!group) {
+            return next(new Error('Group is not exist!'));
+        }
+        let check = false;
+        group.members.map((user, index) => {
+            if (user.toString() === idmember) {
+                group.members.splice(index, 1);
+                check = true;
+            }
+        });
+        if (!check) {
+            return next(new Error('Member is not exist!'));
+        }
+        await Group.update({ _id: id }, group);
+        return res.status(200).json({
+            isSuccess: true,
+            message: 'Delete member success!'
         });
     } catch (err) {
         return next(err);

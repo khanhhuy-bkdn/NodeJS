@@ -9,5 +9,7 @@ router.get('/groups/:id', validate(validation.getGroupById), GroupController.get
 router.post('/groups', validate(validation.createGroup), GroupController.addGroup);
 router.put('/groups/:id', validate(validation.updateGroup), GroupController.updateGroup);
 router.delete('/groups/:id', validate(validation.deleteGroup), GroupController.deleteGroup);
+router.post('/groups/:id/members', validate(validation.addMemberGroup), GroupController.addMemberGroup);
+router.delete('/groups/:id/members/:idmember', validate(validation.deleteMemberGroup), GroupController.deleteMemberGroup);
 
 export default router;
