@@ -4,10 +4,10 @@ var Joi = require('joi');
 exports.createGroup = {
   body: {
     name: Joi.string().max(255).required(),
-    author: Joi.string().required().regex(/^[0-9a-fA-F]{24}$/),
+    author: Joi.string().error(() => 'Không phải là một Object').required().regex(/^[0-9a-fA-F]{24}$/),
     //author: objectID.isValid(Joi.string()),
-    members: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).required(),
-    lastMessage: Joi.string().required().regex(/^[0-9a-fA-F]{24}$/)
+    members: Joi.array().items(Joi.string().error(() => 'Không phải là một Object').regex(/^[0-9a-fA-F]{24}$/)).required(),
+    lastMessage: Joi.string().error(() => 'Không phải là một Object').required().regex(/^[0-9a-fA-F]{24}$/)
   }
 };
 exports.getGroupById = {
@@ -20,10 +20,10 @@ exports.updateGroup = {
     id: Joi.string().required()
   },
   body: {
-    name: Joi.string().required(),
-    author: Joi.string().required().regex(/^[0-9a-fA-F]{24}$/),
-    members: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).required(),
-    lastMessage: Joi.string().required().regex(/^[0-9a-fA-F]{24}$/)
+    name: Joi.string().error(() => 'Vui lòng nhập name').required(),
+    author: Joi.string().required().error(() => 'Không phải là một Object').regex(/^[0-9a-fA-F]{24}$/),
+    members: Joi.array().items(Joi.string().error(() => 'Không phải là một Object').regex(/^[0-9a-fA-F]{24}$/)).required(),
+    lastMessage: Joi.string().error(() => 'Không phải là một Object').required().regex(/^[0-9a-fA-F]{24}$/)
   }
 };
 exports.deleteGroup = {
@@ -36,7 +36,7 @@ exports.addMemberGroup = {
     id: Joi.string().required()
   },
   body: {
-    members: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).required(),
+    members: Joi.array().items(Joi.string().error(() => 'Không phải là một Object').regex(/^[0-9a-fA-F]{24}$/)).required(),
   }
 };
 exports.deleteMemberGroup = {
