@@ -23,13 +23,6 @@ GroupController.getAll = async (req, res, next) => {
 
 GroupController.addGroup = async (req, res, next) => {
     try {
-        const { name, author } = req.body;
-        if (!name) {
-            return next(new Error('Name is require!'));
-        }
-        if (!author) {
-            return next(new Error('Author is require!'));
-        }
         const group = new Group({
             ...req.body,
             deleteAt: null
@@ -47,9 +40,6 @@ GroupController.addGroup = async (req, res, next) => {
 GroupController.getGroupById = async (req, res, next) => {
     try {
         const id = req.params.id;
-        if (!id) {
-            return next(new Error('Id is require!'));
-        }
         const group = await Group.findOne({ _id: id }).populate('author');
         if (!group) {
             return res.status(404).json({
@@ -69,16 +59,6 @@ GroupController.getGroupById = async (req, res, next) => {
 GroupController.updateGroup = async (req, res, next) => {
     try {
         const id = req.params.id;
-        if (!id) {
-            return next(new Error('id is require!'));
-        }
-        const { name, author } = req.body;
-        if (!name) {
-            return next(new Error('Name is require!'));
-        }
-        if (!author) {
-            return next(new Error('Author is require!'));
-        }
         const group = new Group({
             ...req.body,
             deleteAt: null
@@ -97,9 +77,6 @@ GroupController.updateGroup = async (req, res, next) => {
 GroupController.deleteGroup = async (req, res, next) => {
     try {
         const id = req.params.id;
-        if (!id) {
-            return next(new Error('id is require!'));
-        }
         const group = await Group.findById(id);
         if (!group) {
             return next(new Error('Group is not exist!'));
@@ -117,15 +94,12 @@ GroupController.deleteGroup = async (req, res, next) => {
 
 GroupController.addMemberGroup = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        if (!id) {
-            return next(new Error('id is require!'));
-        }
+        const { id } = req.params;
         const { members } = req.body;
-        if (!members) {
-            return next(new Error('Members is require!'));
-        }
         let group = await Group.findOne({ _id: id });
+        if (!group) {
+            return next(new Error('Group is not exist!'));
+        }
         members.map((user, index) => {
             if (group.members.indexOf(mongoose.Types.ObjectId(user)) < 0) {
                 group.members.push(user);
@@ -147,12 +121,6 @@ GroupController.deleteMemberGroup = async (req, res, next) => {
     try {
         const id = req.params.id;
         const idmember = req.params.idmember;
-        if (!id) {
-            return next(new Error('id is require!'));
-        }
-        if (!idmember) {
-            return next(new Error('id member is require!'));
-        }
         const group = await Group.findById(id);
         if (!group) {
             return next(new Error('Group is not exist!'));
