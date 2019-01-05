@@ -4,3 +4,20 @@
 3.1 controller call model to read and write data
 
 mongoose la framework xay dung dua tren mongo thao tac voi database.
+
+* chức năng login: sử dụng chuẩn OAUTH v2
+- module mã hóa password
+    + npm i md5
+    + npm i bcrypt
+        . python 2.7
+        . g ++
+        . cách fix (https://catalin.me/how-to-fix-node-js-gyp-err-cant-find-python-executable-python-on-windows/?fbclid=IwAR0ppuB5BTVncdLFOHg-RgxnM5_Z-ZqapxeLoT502YwW0Zq_lQQ0E4KTxjM)
+- module gen token (JWT)
+    + npm i jsonwebtoken
+
+* cách thực hiện:
+1. create user -> hash password right before saving to DB
+- Create
+- Uppdate
+- Get all (remove password)
+- Get one

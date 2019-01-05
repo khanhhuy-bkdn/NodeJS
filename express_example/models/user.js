@@ -1,44 +1,40 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 let userSchema = new Schema({
-    firstName: {
-        type: String,
-        required: [true, 'firstName is require field!'],
-        maxlength: [255, 'firstName is too long!']
-    },
-    lastName: {
-        type: String,
-        required: [true, 'lastName is require field!'],
-        maxlength: [255, 'lastName is too long!'],
-        trim: true,
-        uppercase: true
+    fullName: {
+        first: {
+            type: String,
+            maxlength: [30, 'firstName is too long!']
+        },
+        last: {
+            type: String,
+            maxlength: [30, 'lastName is too long!'],
+        }
     },
     email: {
         type: String,
         required: [true, 'email is require field!'],
-        maxlength: [255, 'email is too long!']
+        maxlength: [30, 'email is too long!'],
+        // check trung email
+        unique: true
     },
     password: {
         type: String,
         required: [true, 'password is require field!'],
-        maxlength: [20, 'password is too long!'],
+        maxlength: [255, 'password is too long!'],
         minlength: [3, 'password is too short!']
     },
     gender: Boolean,
-    address: {
-        type: [String],
-        required: [true, 'address is require field!'],
-        maxlength: [20, 'address is many!'],
-        minlength: [2, 'address is short!']
-    },
-    age: {
-        type: Number,
-        required: [true, 'age is require field!']
-    },
-    isDelete: {
-        type: Boolean,
-        default: false
+    // address: {
+    //     type: [String],
+    //     required: [true, 'address is require field!'],
+    //     maxlength: [20, 'address is many!'],
+    //     minlength: [2, 'address is short!']
+    // },
+    deleteAt: {
+        type: Date,
+        default: null
     }
 });
 
@@ -46,10 +42,7 @@ userSchema.pre('find', function () {
     const query = this.getQuery();
     query['$or'] = [
         {
-            isDelete: false
-        },
-        {
-            isDelete: null
+            deleteAt: null
         }
     ]
 });
@@ -58,13 +51,31 @@ userSchema.pre('findOne', function () {
     const query = this.getQuery();
     query['$or'] = [
         {
-            isDelete: false
-        },
-        {
-            isDelete: null
+            deleteAt: null
         }
     ]
 });
+
+//Xử lý trùng email
+userSchema.post('save', function (error, doc, next) {
+    if (error.name === 'MongoError' && error.code === 11000) {
+        return next(new Error('this email has been using'));
+    }
+    return next(error);
+});
+
+//Cách 2
+// userSchema.pre('find', function() {
+//     preFindMiddleware(this.getQuery());
+// });
+
+// userSchema.pre('findOne', function() {
+//     preFindMiddleware(this.getQuery());
+// });
+
+// function preFindMiddleware(query) {
+//     return query.deletedAt = null;
+// }
 
 let User = mongoose.model('User', userSchema);
 

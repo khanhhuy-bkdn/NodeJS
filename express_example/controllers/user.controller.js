@@ -1,21 +1,33 @@
 import User from '../models/user';
+import md5 from 'md5';
+import JWT from 'jsonwebtoken';
+import * as constant from './../constant';
+import bcrypt from 'bcrypt';
 
 const UserController = {};
+const salt = bcrypt.genSaltSync(10);
+
+async function verifyToken(token, next) {
+    try {
+        if (!token) {
+            return next(new Error("Not found authentication!"));
+        }
+        const data = await JWT.verify(token, constant.JWT_SECRET);
+        const id = data._id;
+        const user = User.findOne({ _id: id });
+        if (!user) {
+            return next(new Error("User not found!"));
+        }
+    } catch (err) {
+        return next(new Error("Invalid authentication!"));
+    }
+}
 
 UserController.getAll = async (req, res, next) => {
     try {
-        const users = await User.find(
-            // {
-            //     $or: [
-            //         {
-            //             isDelete: false
-            //         },
-            //         {
-            //             isDelete: null
-            //         }
-            //     ]
-            // }
-        ).sort('-dateAdded');
+        const { token } = req.headers;
+        verifyToken(token, next);
+        const users = await User.find().sort('-dateAdded');
         if (!users) {
             return res.status(200).json({
                 isSuccess: true,
@@ -28,89 +40,62 @@ UserController.getAll = async (req, res, next) => {
         });
     } catch (err) {
         return next(err);
-        // return res.status(400).json({
-        //     isSuccess: false,
-        //     message: err.message,
-        //     error: err
-        // });
+    }
+};
+
+UserController.getUserById = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { token } = req.headers;
+        verifyToken(token, next);
+        const user = await User.findOne({ _id: id });
+        if (!user) {
+            return next(new Error("User not found!"));
+        }
+        return res.status(200).json({
+            isSuccess: true,
+            user: user
+        });
+    } catch (err) {
+        return next(err);
     }
 };
 
 UserController.addUser = async (req, res, next) => {
     try {
-        const { firstName, lastName, email, password, gender, address, age } = req.body;
-        if (!email) {
-            return next(new Error('Email is require!'));
-            // return res.status(400).json({
-            //     isSuccess: false,
-            //     message: 'Email is require!'
-            // });
-        }
-        if (!password) {
-            return next(new Error('Password is require!'));
-        }
+        const { fullName, email, password, gender } = req.body;
+        const hash = bcrypt.hashSync(password, salt);
         const user = new User({
-            firstName,
-            lastName,
+            fullName,
             email,
-            password,
-            gender,
-            address,
-            age
+            //password: md5(password),
+            password: hash,
+            gender
         });
         await user.save();
+        delete user._doc.password;
         return res.status(201).json({
             isSuccess: true,
-            user: user
+            user
         });
     } catch (err) {
         return next(err);
     }
 }
 
-UserController.getUserById = async (req, res, next) => {
-    try {
-        const id = req.params.id;
-        if (!id) {
-            return next(new Error('Id is require!'));
-        }
-        const user = await User.findOne({ _id: id });
-        if (!user) {
-            return res.status(200).json({
-                isSuccess: true,
-                message: "User is not exist!"
-            });
-        }
-        return res.status(200).json({
-            isSuccess: true,
-            user: user
-        });
-    } catch (err) {
-        return next(err);
-    }
-};
-
 UserController.updateUser = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        if (!id) {
-            return next(new Error('id is require!'));
+        const { id } = req.params;
+        const user = await User.findOne({ _id: id });
+        if (req.body.password !== undefined) {
+            //req.body.password = md5(req.body.password);
+            req.body.password = bcrypt.hashSync(req.body.password, salt);
         }
-        const { email, password } = req.body;
-        if (!email) {
-            return next(new Error('Email is require!'));
-        }
-        if (!password) {
-            return next(new Error('Password is require!'));
-        }
-        const user = new User({
-            ...req.body
-        });
-        const users = await User.findByIdAndUpdate(id, user, { new: true });
+        user.set({ ...req.body, deleteAt: null });
+        await user.save();
         return res.status(200).json({
             isSuccess: true,
-            message: 'Update success!',
-            users: users
+            message: 'Update success!'
         });
     } catch (err) {
         return next(err);
@@ -119,20 +104,68 @@ UserController.updateUser = async (req, res, next) => {
 
 UserController.deleteUser = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        if (!id) {
-            return next(new Error('id is require!'));
-        }
-        //await User.findByIdAndRemove(id);
+        const { id } = req.params;
         const user = await User.findById(id);
         if (!user) {
             return next(new Error('User is not exist!'));
         }
-        user.isDelete = true;
-        await User.update({ _id: id }, user);
+        user.deleteAt = Date.now();
+        await user.save();
         return res.status(200).json({
             isSuccess: true,
             message: 'Delete success!'
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+UserController.login = async (req, res, next) => {
+    try {
+        const { password, email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return next(new Error('User is not found'));
+        }
+        //const isCorrectPassword = md5(password) === user.password;
+        const isCorrectPassword = bcrypt.compareSync(password, user.password);
+        if (!isCorrectPassword) {
+            return next(new Error('password is not correct'));
+        }
+        delete user._doc.password;
+        delete user._doc.deleteAt;
+        const token = JWT.sign(user._doc, constant.JWT_SECRET);
+        return res.json({
+            isSuccess: true,
+            user,
+            token
+        });
+    } catch (e) {
+        return next(e);
+    }
+};
+
+UserController.updatePassword = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findOne({ _id: id });
+        const { passwordOld, passwordNew, passwordVerify } = req.body;
+        if (passwordOld === undefined || passwordNew === undefined || passwordVerify === undefined) {
+            return next(new Error('password is error!'));
+        }
+        const isCorrectPassword = bcrypt.compareSync(passwordOld, user.password);
+        if (!isCorrectPassword) {
+            return next(new Error('password is not correct!'));
+        }
+        if(passwordNew !== passwordVerify)
+        {
+            return next(new Error('passwordVerify is not correct!'));
+        }
+        user.password = bcrypt.hashSync(passwordNew, salt);
+        await user.save();
+        return res.status(200).json({
+            isSuccess: true,
+            message: 'Update password success!'
         });
     } catch (err) {
         return next(err);

@@ -19,5 +19,7 @@ router.get('/users/:id', validate(validation.getUserById), UserController.getUse
 router.post('/users', validate(validation.createUser), UserController.addUser);
 router.put('/users/:id', validate(validation.updateUser), UserController.updateUser);
 router.delete('/users/:id', validate(validation.deleteUser), UserController.deleteUser);
+router.post('/login', validate(validation.loginUser), UserController.login);
+router.put('/users/:id/updatePassword', validate(validation.updatePassword), UserController.updatePassword);
 
 export default router;

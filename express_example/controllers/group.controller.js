@@ -1,5 +1,5 @@
 import Group from '../models/Group';
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const GroupController = {};
 
