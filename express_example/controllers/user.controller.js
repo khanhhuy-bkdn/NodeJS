@@ -9,16 +9,17 @@ const salt = bcrypt.genSaltSync(10);
 
 UserController.verifyToken = async (req, res, next) => {
     try {
-        const { token } = req.headers || req.params || req.body || req.query;
+        const token = req.headers['x-access-token'] || req.body.token || req.query.token;
         if (!token) {
             return next(new Error("Not found authentication!"));
         }
         const data = await JWT.verify(token, constant.JWT_SECRET);
         const id = data._id;
-        const user = User.findOne({ _id: id });
+        const user = await User.findOne({ _id: id });
         if (!user) {
             return next(new Error("User not found!"));
         }
+        return next();
     } catch (err) {
         return next(new Error("Invalid authentication!"));
     }
@@ -26,7 +27,7 @@ UserController.verifyToken = async (req, res, next) => {
 
 UserController.getAll = async (req, res, next) => {
     try {
-        UserController.verifyToken(req, res, next);
+        //UserController.verifyToken(req, res, next);
         const users = await User.find().sort('-dateAdded');
         if (!users) {
             return res.status(200).json({
@@ -46,7 +47,7 @@ UserController.getAll = async (req, res, next) => {
 UserController.getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
-        UserController.verifyToken(req, res, next);
+        //UserController.verifyToken(req, res, next);
         const user = await User.findOne({ _id: id });
         if (!user) {
             return next(new Error("User not found!"));
@@ -84,7 +85,7 @@ UserController.addUser = async (req, res, next) => {
 
 UserController.updateUser = async (req, res, next) => {
     try {
-        UserController.verifyToken(req, res, next);
+        //UserController.verifyToken(req, res, next);
         const { id } = req.params;
         const user = await User.findOne({ _id: id });
         if (req.body.password !== undefined) {
@@ -104,7 +105,7 @@ UserController.updateUser = async (req, res, next) => {
 
 UserController.deleteUser = async (req, res, next) => {
     try {
-        UserController.verifyToken(req, res, next);
+        //UserController.verifyToken(req, res, next);
         const { id } = req.params;
         const user = await User.findById(id);
         if (!user) {
@@ -148,7 +149,7 @@ UserController.login = async (req, res, next) => {
 
 UserController.updatePassword = async (req, res, next) => {
     try {
-        UserController.verifyToken(req, res, next);
+        //UserController.verifyToken(req, res, next);
         const { id } = req.params;
         const user = await User.findOne({ _id: id });
         const { passwordOld, passwordNew, passwordVerify } = req.body;
