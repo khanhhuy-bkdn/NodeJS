@@ -7,8 +7,9 @@ import bcrypt from 'bcrypt';
 const UserController = {};
 const salt = bcrypt.genSaltSync(10);
 
-async function verifyToken(token, next) {
+UserController.verifyToken = async (req, res, next) => {
     try {
+        const { token } = req.headers || req.params || req.body || req.query;
         if (!token) {
             return next(new Error("Not found authentication!"));
         }
@@ -25,8 +26,7 @@ async function verifyToken(token, next) {
 
 UserController.getAll = async (req, res, next) => {
     try {
-        const { token } = req.headers;
-        verifyToken(token, next);
+        UserController.verifyToken(req, res, next);
         const users = await User.find().sort('-dateAdded');
         if (!users) {
             return res.status(200).json({
@@ -46,8 +46,7 @@ UserController.getAll = async (req, res, next) => {
 UserController.getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { token } = req.headers;
-        verifyToken(token, next);
+        UserController.verifyToken(req, res, next);
         const user = await User.findOne({ _id: id });
         if (!user) {
             return next(new Error("User not found!"));
@@ -85,6 +84,7 @@ UserController.addUser = async (req, res, next) => {
 
 UserController.updateUser = async (req, res, next) => {
     try {
+        UserController.verifyToken(req, res, next);
         const { id } = req.params;
         const user = await User.findOne({ _id: id });
         if (req.body.password !== undefined) {
@@ -104,6 +104,7 @@ UserController.updateUser = async (req, res, next) => {
 
 UserController.deleteUser = async (req, res, next) => {
     try {
+        UserController.verifyToken(req, res, next);
         const { id } = req.params;
         const user = await User.findById(id);
         if (!user) {
@@ -147,6 +148,7 @@ UserController.login = async (req, res, next) => {
 
 UserController.updatePassword = async (req, res, next) => {
     try {
+        UserController.verifyToken(req, res, next);
         const { id } = req.params;
         const user = await User.findOne({ _id: id });
         const { passwordOld, passwordNew, passwordVerify } = req.body;
@@ -157,8 +159,7 @@ UserController.updatePassword = async (req, res, next) => {
         if (!isCorrectPassword) {
             return next(new Error('password is not correct!'));
         }
-        if(passwordNew !== passwordVerify)
-        {
+        if (passwordNew !== passwordVerify) {
             return next(new Error('passwordVerify is not correct!'));
         }
         user.password = bcrypt.hashSync(passwordNew, salt);
