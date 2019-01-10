@@ -2,8 +2,8 @@ var Joi = require('joi');
 
 exports.loginUser = {
   body: {
-    email: Joi.string().email({ minDomainAtoms: 2 }).required(),
-    password: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required()
+    email: Joi.string().email({ minDomainAtoms: 2 }).required().max(150),
+    password: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().max(50)
   }
 };
 exports.createUser = {
@@ -12,7 +12,7 @@ exports.createUser = {
       first: Joi.string().min(3).max(30),
       last: Joi.string().min(3).max(30)
     }),
-    email: Joi.string().email({ minDomainAtoms: 2 }).required(),
+    email: Joi.string().email({ minDomainAtoms: 2 }).required().min(3).max(150),
     password: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(30)
   }
 };
@@ -30,8 +30,8 @@ exports.updateUser = {
       first: Joi.string().min(3).max(30),
       last: Joi.string().min(3).max(30)
     }),
-    email: Joi.string().email().required(),
-    password: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required()
+    email: Joi.string().email().required().min(3).max(150),
+    password: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(50)
   }
 };
 exports.deleteUser = {
@@ -44,8 +44,8 @@ exports.updatePassword = {
     id: Joi.string().required()
   },
   body: {
-    passwordOld: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required(),
-    passwordNew: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required(),
-    passwordVerify: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required(),
+    currentPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(50),
+    newPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(50),
+    verifyPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(50),
   }
 };

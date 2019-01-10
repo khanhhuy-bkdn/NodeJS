@@ -7,23 +7,23 @@ import bcrypt from 'bcrypt';
 const UserController = {};
 const salt = bcrypt.genSaltSync(10);
 
-UserController.verifyToken = async (req, res, next) => {
-    try {
-        const token = req.headers['x-access-token'] || req.body.token || req.query.token;
-        if (!token) {
-            return next(new Error("Not found authentication!"));
-        }
-        const data = await JWT.verify(token, constant.JWT_SECRET);
-        const id = data._id;
-        const user = await User.findOne({ _id: id });
-        if (!user) {
-            return next(new Error("User not found!"));
-        }
-        return next();
-    } catch (err) {
-        return next(new Error("Invalid authentication!"));
-    }
-}
+// UserController.verifyToken = async (req, res, next) => {
+//     try {
+//         const token = req.headers['x-access-token'] || req.body.token || req.query.token;
+//         if (!token) {
+//             return next(new Error("Not found authentication!"));
+//         }
+//         const data = await JWT.verify(token, constant.JWT_SECRET);
+//         const id = data._id;
+//         const user = await User.findOne({ _id: id });
+//         if (!user) {
+//             return next(new Error("User not found!"));
+//         }
+//         return next();
+//     } catch (err) {
+//         return next(new Error("Invalid authentication!"));
+//     }
+// }
 
 UserController.getAll = async (req, res, next) => {
     try {
@@ -88,6 +88,9 @@ UserController.updateUser = async (req, res, next) => {
         //UserController.verifyToken(req, res, next);
         const { id } = req.params;
         const user = await User.findOne({ _id: id });
+        if (!user) {
+            return next(new Error('User is not exist!'));
+        }
         if (req.body.password !== undefined) {
             //req.body.password = md5(req.body.password);
             req.body.password = bcrypt.hashSync(req.body.password, salt);
@@ -107,12 +110,12 @@ UserController.deleteUser = async (req, res, next) => {
     try {
         //UserController.verifyToken(req, res, next);
         const { id } = req.params;
-        const user = await User.findById(id);
+        const user = await User.findById(id).select('deleteAt').lean(true);
         if (!user) {
             return next(new Error('User is not exist!'));
         }
         user.deleteAt = Date.now();
-        await user.save();
+        await User.update({ _id: id }, { $set: { deleteAt: user.deleteAt }});
         return res.status(200).json({
             isSuccess: true,
             message: 'Delete success!'
@@ -136,7 +139,7 @@ UserController.login = async (req, res, next) => {
         }
         delete user._doc.password;
         delete user._doc.deleteAt;
-        const token = JWT.sign(user._doc, constant.JWT_SECRET);
+        const token = JWT.sign(user._doc, constant.JWT_SECRET, { expiresIn: '5m' });
         return res.json({
             isSuccess: true,
             user,
@@ -150,21 +153,25 @@ UserController.login = async (req, res, next) => {
 UserController.updatePassword = async (req, res, next) => {
     try {
         //UserController.verifyToken(req, res, next);
-        const { id } = req.params;
-        const user = await User.findOne({ _id: id });
-        const { passwordOld, passwordNew, passwordVerify } = req.body;
-        if (passwordOld === undefined || passwordNew === undefined || passwordVerify === undefined) {
-            return next(new Error('password is error!'));
+        const id = req.user._id;
+        if (!id) {
+            return next(new Error("Cannot get _id from jwt payload!"));
         }
-        const isCorrectPassword = bcrypt.compareSync(passwordOld, user.password);
+        const { currentPassword, newPassword, verifyPassword } = req.body;
+        if (newPassword !== verifyPassword) {
+            return next(new Error('verifyPassword is not correct!'));
+        }
+        const user = await User.findOne({ _id: id }).select('password').lean(true);
+        console.log(user);
+        if (!user) {
+            return next(new Error('User is not found'));
+        }
+        const isCorrectPassword = bcrypt.compareSync(currentPassword, user.password);
         if (!isCorrectPassword) {
             return next(new Error('password is not correct!'));
         }
-        if (passwordNew !== passwordVerify) {
-            return next(new Error('passwordVerify is not correct!'));
-        }
-        user.password = bcrypt.hashSync(passwordNew, salt);
-        await user.save();
+        user.password = bcrypt.hashSync(currentPassword, salt);
+        await User.update({ _id: id }, { $set: { password: user.password }});
         return res.status(200).json({
             isSuccess: true,
             message: 'Update password success!'

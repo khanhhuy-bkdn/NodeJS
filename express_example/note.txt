@@ -21,3 +21,13 @@ mongoose la framework xay dung dua tren mongo thao tac voi database.
 - Uppdate
 - Get all (remove password)
 - Get one
+
+-- lỗi UnhandledPromiseRejectionWarning thiếu try catch khi dùng async await
+-- chuẩn token: Bearer <token>
+
+query: tối ưu bảng dùng learn(true) => trả về object thuần => nếu như vậy sẽ không dùng được .save()...
+-- await User.findOne({ _id: id }).select('password') chọn ra những trường cần thiết
+-- select('password -_id'): loại bỏ trường id
+=> có thể user.save()
+await User.findOne({ _id: id }).select('password').learn(true)
+=> không dùng được user.save();
