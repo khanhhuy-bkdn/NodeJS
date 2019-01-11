@@ -19,9 +19,11 @@ let groupSchema = new Schema({
         required: [true, 'Author is require!']
     },
     members: [{
-        type: mongoose.Schema.Types.ObjectId
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }]
-});
+}, { timestamps: true });
+//{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
 function checkDeleted(_this) {
     const query = _this.getQuery();
@@ -48,9 +50,21 @@ groupSchema.pre('save', async function (next) {
     const user = await User.findOne({ _id: this.author });
     let users = await User.find({ _id: this.members });
     if (!user) {
-        return next(new Error('author is not exits'));
+        return next(new Error(`author ${this.author} is not exits`));
     };
     if (users.length !== this.members.length) {
+        return next(new Error('member is not exits'));
+    }
+});
+
+groupSchema.pre('update', async function (next) {
+    //console.log(this._update.author)
+    const user = await User.findOne({ _id: this._update.author });
+    let users = await User.find({ _id: this._update.members });
+    if (!user) {
+        return next(new Error(`author ${this.author} is not exits`));
+    };
+    if (users.length !== this._update.members.length) {
         return next(new Error('member is not exits'));
     }
 });

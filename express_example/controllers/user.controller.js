@@ -28,7 +28,7 @@ const salt = bcrypt.genSaltSync(10);
 UserController.getAll = async (req, res, next) => {
     try {
         //UserController.verifyToken(req, res, next);
-        const users = await User.find().sort('-dateAdded');
+        const users = await User.find().sort('-dateAdded').lean(true);
         if (!users) {
             return res.status(200).json({
                 isSuccess: true,
@@ -48,7 +48,7 @@ UserController.getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
         //UserController.verifyToken(req, res, next);
-        const user = await User.findOne({ _id: id });
+        const user = await User.findOne({ _id: id }).lean(true);
         if (!user) {
             return next(new Error("User not found!"));
         }
@@ -115,7 +115,7 @@ UserController.deleteUser = async (req, res, next) => {
             return next(new Error('User is not exist!'));
         }
         user.deleteAt = Date.now();
-        await User.update({ _id: id }, { $set: { deleteAt: user.deleteAt }});
+        await User.update({ _id: id }, { $set: { deleteAt: user.deleteAt } });
         return res.status(200).json({
             isSuccess: true,
             message: 'Delete success!'
@@ -128,7 +128,7 @@ UserController.deleteUser = async (req, res, next) => {
 UserController.login = async (req, res, next) => {
     try {
         const { password, email } = req.body;
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).select('password').lean(true);
         if (!user) {
             return next(new Error('User is not found'));
         }
@@ -137,9 +137,9 @@ UserController.login = async (req, res, next) => {
         if (!isCorrectPassword) {
             return next(new Error('password is not correct'));
         }
-        delete user._doc.password;
-        delete user._doc.deleteAt;
-        const token = JWT.sign(user._doc, constant.JWT_SECRET, { expiresIn: '5m' });
+        delete user.password;
+        //delete user._doc.deleteAt;
+        const token = JWT.sign(user, constant.JWT_SECRET, { expiresIn: '3h' });
         return res.json({
             isSuccess: true,
             user,
@@ -153,25 +153,17 @@ UserController.login = async (req, res, next) => {
 UserController.updatePassword = async (req, res, next) => {
     try {
         //UserController.verifyToken(req, res, next);
-        const id = req.user._id;
-        if (!id) {
-            return next(new Error("Cannot get _id from jwt payload!"));
-        }
         const { currentPassword, newPassword, verifyPassword } = req.body;
         if (newPassword !== verifyPassword) {
             return next(new Error('verifyPassword is not correct!'));
         }
-        const user = await User.findOne({ _id: id }).select('password').lean(true);
-        console.log(user);
-        if (!user) {
-            return next(new Error('User is not found'));
-        }
+        const user = req.user;
         const isCorrectPassword = bcrypt.compareSync(currentPassword, user.password);
         if (!isCorrectPassword) {
             return next(new Error('password is not correct!'));
         }
         user.password = bcrypt.hashSync(currentPassword, salt);
-        await User.update({ _id: id }, { $set: { password: user.password }});
+        await User.update({ _id: user._id }, { $set: { password: user.password }});
         return res.status(200).json({
             isSuccess: true,
             message: 'Update password success!'

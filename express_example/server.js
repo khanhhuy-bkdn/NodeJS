@@ -3,7 +3,8 @@ import bodyParser from 'body-parser';
 import connectToDb from './db/connect';
 import user from './routes/user.routes';
 import classes from './routes/class.router';
-import groups from './routes/group.router'
+import groups from './routes/group.router';
+import message from './routes/message.router'
 
 const http = require('http');
 const server = express();
@@ -18,6 +19,7 @@ server.use(bodyParser.urlencoded({
 server.use(user);
 server.use(classes);
 server.use(groups);
+server.use(message);
 
 server.listen(3000, () => {
     console.log('Server started at: 3000');

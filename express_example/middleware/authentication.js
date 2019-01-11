@@ -18,7 +18,7 @@ export const verifyToken = async (req, res, next) => {
         if (!id) {
             return next(new Error("Cannot get _id from jwt payload!"));
         }
-        const user = await User.findOne({ _id: id });
+        const user = await User.findOne({ _id: id }).select('password').lean(true);
         if (!user) {
             return next(new Error("User not found!"));
         }

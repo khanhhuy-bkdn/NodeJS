@@ -38,23 +38,23 @@ let userSchema = new Schema({
     }
 });
 
-userSchema.pre('find', function () {
-    const query = this.getQuery();
-    query['$or'] = [
-        {
-            deleteAt: null
-        }
-    ]
-});
+// userSchema.pre('find', function () {
+//     const query = this.getQuery();
+//     query['$or'] = [
+//         {
+//             deleteAt: null
+//         }
+//     ]
+// });
 
-userSchema.pre('findOne', function () {
-    const query = this.getQuery();
-    query['$or'] = [
-        {
-            deleteAt: null
-        }
-    ]
-});
+// userSchema.pre('findOne', function () {
+//     const query = this.getQuery();
+//     query['$or'] = [
+//         {
+//             deleteAt: null
+//         }
+//     ]
+// });
 
 //Xử lý trùng email
 userSchema.post('save', function (error, doc, next) {
@@ -65,17 +65,19 @@ userSchema.post('save', function (error, doc, next) {
 });
 
 //Cách 2
-// userSchema.pre('find', function() {
-//     preFindMiddleware(this.getQuery());
-// });
+userSchema.pre('find', function() {
+    preFindMiddleware(this);
+});
 
-// userSchema.pre('findOne', function() {
-//     preFindMiddleware(this.getQuery());
-// });
+userSchema.pre('findOne', function() {
+    preFindMiddleware(this);
+});
 
-// function preFindMiddleware(query) {
-//     return query.deletedAt = null;
-// }
+function preFindMiddleware(_this) {
+    const query = _this.getQuery();
+    _this.select('email fullName gender');
+    return query.deletedAt = null;
+}
 
 let User = mongoose.model('User', userSchema);
 

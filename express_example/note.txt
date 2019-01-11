@@ -31,3 +31,11 @@ query: tối ưu bảng dùng learn(true) => trả về object thuần => nếu 
 => có thể user.save()
 await User.findOne({ _id: id }).select('password').learn(true)
 => không dùng được user.save();
+
+-- debug trên trình duyệt
+"start": "nodemon server.js --exec babel-node --inspect",
+
+--------------------------------------------------------------
+-- phân trang
+.skip((page - 1) * limit) // bỏ qua
+.limit() // giới hạn

@@ -40,6 +40,31 @@ exports.createGroup = {
         }),
     }
 };
+exports.getAllGroup = {
+    query: {
+        page: Joi.number().required().min(1).options({
+            language: {
+                any: {
+                    empty: 'is required!'
+                },
+                number: {
+                    min: 'must be at least 1!'
+                },
+            },
+        }),
+        limit: Joi.number().required().max(1000).min(1).options({
+            language: {
+                any: {
+                    empty: 'is required!'
+                },
+                number: {
+                    min: 'must be at least 1!',
+                    max: 'is too long!'
+                },
+            },
+        })
+    }
+};
 exports.getGroupById = {
     params: {
         id: Joi.string().required().error(() => 'id is require!')
