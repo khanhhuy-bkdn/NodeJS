@@ -65,6 +65,11 @@ MessageController.addMessage = async (req, res, next) => {
     try {
         const { group, message } = req.body;
         const author = req.user._id;
+        const objGroup = await Group.findOne({ _id: group, members:  author});
+        if(!objGroup)
+        {
+            return next(new Error('Author is not exist in group!'));
+        }
         const objMessage = new Message({
             message,
             group,
@@ -83,12 +88,14 @@ MessageController.addMessage = async (req, res, next) => {
 MessageController.updateMessage = async (req, res, next) => {
     try {
         const id = req.params.id;
-        const objMessage = await Message.findById(id).select('group message author').lean(true);
+        const user = req.user;
+        const objMessage = await Message.findOne({ _id: id, author: user._id }).select('group message author');
         if (!objMessage) {
             return next(new Error('Message is not exist!'));
         }
-        objMessage.set({ ...req.body, deleteAt: null });
-        await Message.update({ _id: id }, objMessage);
+        objMessage.group = req.body.group ? req.body.group : objMessage.group;
+        objMessage.message = req.body.message ? req.body.message : objMessage.message;
+        await objMessage.save();
         return res.status(200).json({
             isSuccess: true,
             message: 'Update success!',
@@ -101,12 +108,13 @@ MessageController.updateMessage = async (req, res, next) => {
 MessageController.deleteMessage = async (req, res, next) => {
     try {
         const id = req.params.id;
-        const message = await Message.findById(id).select('deleteAt').lean(true);
+        const user = req.user;
+        const message = await Message.findOne({ _id: id, author: user._id }).select('deleteAt');
         if (!message) {
             return next(new Error('Message is not exist!'));
         }
         message.deleteAt = Date.now();
-        await Message.update({ _id: id }, message);
+        await message.save();
         return res.status(200).json({
             isSuccess: true,
             message: 'Delete success!'

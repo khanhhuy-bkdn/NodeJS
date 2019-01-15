@@ -21,7 +21,11 @@ let groupSchema = new Schema({
     members: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }]
+    }],
+    type: {
+        type: String,
+        enum: ['PUBLIC', 'PRIVATE']
+    }
 }, { timestamps: true });
 //{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 

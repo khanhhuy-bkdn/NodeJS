@@ -78,10 +78,24 @@ GroupController.addGroup = async (req, res, next) => {
             setOfMembers.add(member);
         }
         const addedMember = Array.from(setOfMembers);
+        let typeGroup = '';
+        if (addedMember.length > 2) {
+            typeGroup = 'PUBLIC';
+        }
+        else {
+            typeGroup = 'PRIVATE';
+            const groupMembers = await Group.findOne({ members: { $all: addedMember } }).select('members').lean(); //[1,2] === [2,1]
+            if (groupMembers) {
+                if (addedMember.length === groupMembers.members.length) {
+                    return next(new Error('Group is exist in DB!'));
+                }
+            }
+        }
         const group = new Group({
             name,
             members: addedMember,
-            author
+            author,
+            type: typeGroup
         });
         await group.save();
         return res.status(201).json({
@@ -114,7 +128,7 @@ GroupController.updateGroup = async (req, res, next) => {
 GroupController.deleteGroup = async (req, res, next) => {
     try {
         const id = req.params.id;
-        const group = await Group.findById(id).select('deleteAt').lean(true);
+        const group = await Group.findOne({ _id: id, author: req.user._id }).select('deleteAt').lean(true);
         if (!group) {
             return next(new Error('Group is not exist!'));
         }
