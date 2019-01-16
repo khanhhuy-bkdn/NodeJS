@@ -1,44 +1,31 @@
-import User from '../models/user';
 import md5 from 'md5';
 import JWT from 'jsonwebtoken';
 import * as constant from './../constant';
 import bcrypt from 'bcrypt';
+import formidable from 'formidable';
+import { ResponseHandle } from './../helpers';
+import { userRespository } from '../respositories';
 
 const UserController = {};
 const salt = bcrypt.genSaltSync(10);
 
-// UserController.verifyToken = async (req, res, next) => {
-//     try {
-//         const token = req.headers['x-access-token'] || req.body.token || req.query.token;
-//         if (!token) {
-//             return next(new Error("Not found authentication!"));
-//         }
-//         const data = await JWT.verify(token, constant.JWT_SECRET);
-//         const id = data._id;
-//         const user = await User.findOne({ _id: id });
-//         if (!user) {
-//             return next(new Error("User not found!"));
-//         }
-//         return next();
-//     } catch (err) {
-//         return next(new Error("Invalid authentication!"));
-//     }
-// }
-
 UserController.getAll = async (req, res, next) => {
     try {
-        //UserController.verifyToken(req, res, next);
-        const users = await User.find().sort('-dateAdded').lean(true);
-        if (!users) {
-            return res.status(200).json({
-                isSuccess: true,
-                message: "Users is empty!"
-            });
-        }
-        return res.status(200).json({
-            isSuccess: true,
-            users,
+        const { limit, page } = req.query;
+        const users = await userRespository.getAll({
+            limit,
+            page,
+            sort: {
+                _id: -1
+            },
+            lean: true,
         });
+        //const users = await User.find().sort('-dateAdded').lean(true);
+        // return res.status(200).json({
+        //     isSuccess: true,
+        //     users,
+        // });
+        return ResponseHandle.returnSuccess(res, 'Success!', users);
     } catch (err) {
         return next(err);
     }
@@ -47,15 +34,17 @@ UserController.getAll = async (req, res, next) => {
 UserController.getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
-        //UserController.verifyToken(req, res, next);
-        const user = await User.findOne({ _id: id }).lean(true);
+        const user = await userRespository.getOne({
+            where: {
+                _id: id
+            },
+            lean: true
+        });
+        //const user = await User.findOne({ _id: id }).lean(true);
         if (!user) {
             return next(new Error("User not found!"));
         }
-        return res.status(200).json({
-            isSuccess: true,
-            user: user
-        });
+        return ResponseHandle.returnSuccess(res, 'Success!', user);
     } catch (err) {
         return next(err);
     }
@@ -63,21 +52,9 @@ UserController.getUserById = async (req, res, next) => {
 
 UserController.addUser = async (req, res, next) => {
     try {
-        const { fullName, email, password, gender } = req.body;
-        const hash = bcrypt.hashSync(password, salt);
-        const user = new User({
-            fullName,
-            email,
-            //password: md5(password),
-            password: hash,
-            gender
-        });
-        await user.save();
+        const user = await userRespository.create(req.body, next);
         delete user._doc.password;
-        return res.status(201).json({
-            isSuccess: true,
-            user
-        });
+        return ResponseHandle.returnSuccess(res, 'Add success!', user);
     } catch (err) {
         return next(err);
     }
@@ -85,22 +62,9 @@ UserController.addUser = async (req, res, next) => {
 
 UserController.updateUser = async (req, res, next) => {
     try {
-        //UserController.verifyToken(req, res, next);
         const { id } = req.params;
-        const user = await User.findOne({ _id: id });
-        if (!user) {
-            return next(new Error('User is not exist!'));
-        }
-        if (req.body.password !== undefined) {
-            //req.body.password = md5(req.body.password);
-            req.body.password = bcrypt.hashSync(req.body.password, salt);
-        }
-        user.set({ ...req.body, deleteAt: null });
-        await user.save();
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Update success!'
-        });
+        await userRespository.update({ _id: id }, req.body, next);
+        return ResponseHandle.returnSuccess(res, 'Update success!', null);
     } catch (err) {
         return next(err);
     }
@@ -108,18 +72,23 @@ UserController.updateUser = async (req, res, next) => {
 
 UserController.deleteUser = async (req, res, next) => {
     try {
-        //UserController.verifyToken(req, res, next);
         const { id } = req.params;
-        const user = await User.findById(id).select('deleteAt').lean(true);
+        const user = await userRespository.getOne({
+            where: {
+                _id: id
+            },
+            lean: true,
+            select: 'deleteAt'
+        });
         if (!user) {
             return next(new Error('User is not exist!'));
         }
-        user.deleteAt = Date.now();
-        await User.update({ _id: id }, { $set: { deleteAt: user.deleteAt } });
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Delete success!'
+        await userRespository.softDelete({
+            where: {
+                _id: id
+            }
         });
+        return ResponseHandle.returnSuccess(res, 'Delete success!', null);
     } catch (err) {
         return next(err);
     }
@@ -128,7 +97,14 @@ UserController.deleteUser = async (req, res, next) => {
 UserController.login = async (req, res, next) => {
     try {
         const { password, email } = req.body;
-        const user = await User.findOne({ email }).select('password').lean(true);
+        const user = await userRespository.getOne({
+            where: {
+                email
+            },
+            select: 'password',
+            lean: true
+        });
+        //const user = await User.findOne({ email }).select('password').lean(true);
         if (!user) {
             return next(new Error('User is not found'));
         }
@@ -152,7 +128,6 @@ UserController.login = async (req, res, next) => {
 
 UserController.updatePassword = async (req, res, next) => {
     try {
-        //UserController.verifyToken(req, res, next);
         const { currentPassword, newPassword, verifyPassword } = req.body;
         if (newPassword !== verifyPassword) {
             return next(new Error('verifyPassword is not correct!'));
@@ -162,11 +137,49 @@ UserController.updatePassword = async (req, res, next) => {
         if (!isCorrectPassword) {
             return next(new Error('password is not correct!'));
         }
-        user.password = bcrypt.hashSync(currentPassword, salt);
-        await User.update({ _id: user._id }, { $set: { password: user.password }});
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Update password success!'
+        await userRespository.update({ _id: user._id }, { password: currentPassword }, next);
+        return ResponseHandle.returnSuccess(res, 'Update password success!', null);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+UserController.upload = async (req, res, next) => {
+    try {
+        var form = new formidable.IncomingForm();
+        form.uploadDir = "./uploads";
+        form.maxFileSize = 200 * 1024 * 1024; //max 20MB
+        form.multiples = true; //chọn nhiều
+        form.keepExtensions = true;
+        form.parse(req, (err, fields, files) => {
+            if (err) {
+                res.json({
+                    isSuccess: false,
+                    message: 'Cannot upload file!',
+                    err
+                });
+            }
+            let arrayOfFiles = files['files'];
+            if (arrayOfFiles.length > 0) {
+                let fileNames = [];
+                arrayOfFiles.forEach((item) => {
+                    fileNames.push(item.path.split('\\')[1]);
+                });
+                res.json({
+                    isSuccess: true,
+                    data: fileNames,
+                    message: 'Upload success!'
+                });
+            } else {
+                res.json({
+                    isSuccess: false,
+                    data: {},
+                    message: 'No file is upload!'
+                });
+            }
+            // res.writeHead(200, { 'content-type': 'text/plain' });
+            // res.write('received upload:\n\n');
+            // res.end(util.inspect({ fields: fields, files: files }));
         });
     } catch (err) {
         return next(err);

@@ -20,6 +20,7 @@
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "express-validation": "^1.0.2",
+    "formidable": "^1.2.1",
     "joi": "^14.3.0",
     "jsonwebtoken": "^8.4.0",
     "md5": "^2.2.1",

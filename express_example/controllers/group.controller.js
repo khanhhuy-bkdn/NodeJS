@@ -1,6 +1,7 @@
 import Group from '../models/Group';
 import User from '../models/user'
 const mongoose = require('mongoose');
+import { ResponseHandle } from './../helpers'
 
 const GroupController = {};
 
@@ -30,10 +31,7 @@ GroupController.getAll = async (req, res, next) => {
             ])
             .skip((parseInt(page) - 1) * parseInt(limit))
             .limit(parseInt(limit));
-        return res.status(200).json({
-            isSuccess: true,
-            groups,
-        });
+        return ResponseHandle.returnSuccess(res, 'Success!', groups);
     } catch (err) {
         return next(err);
     }
@@ -59,10 +57,7 @@ GroupController.getGroupById = async (req, res, next) => {
                 message: "Group is not exist!"
             });
         }
-        return res.status(200).json({
-            isSuccess: true,
-            group
-        });
+        return ResponseHandle.returnSuccess(res, 'Success!', group);
     } catch (err) {
         return next(err);
     }
@@ -98,10 +93,7 @@ GroupController.addGroup = async (req, res, next) => {
             type: typeGroup
         });
         await group.save();
-        return res.status(201).json({
-            isSuccess: true,
-            group
-        });
+        return ResponseHandle.returnSuccess(res, 'Success!', group);
     } catch (err) {
         return next(err);
     }
@@ -116,10 +108,7 @@ GroupController.updateGroup = async (req, res, next) => {
         });
         group._id = id;
         await Group.findOneAndUpdate({ _id: id }, group, { new: true });
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Update success!',
-        });
+        return ResponseHandle.returnSuccess(res, 'Update success!', null);
     } catch (err) {
         return next(err);
     }
@@ -134,10 +123,7 @@ GroupController.deleteGroup = async (req, res, next) => {
         }
         group.deleteAt = Date.now();
         await Group.update({ _id: id }, group);
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Delete success!'
-        });
+        return ResponseHandle.returnSuccess(res, 'Delete success!', null);
     } catch (err) {
         return next(err);
     }
@@ -167,10 +153,7 @@ GroupController.addMemberGroup = async (req, res, next) => {
         }
         group.members = Array.from(setOfMembers);
         await Group.update({ _id: id }, group);
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Add member success!',
-        });
+        return ResponseHandle.returnSuccess(res, 'Add members success!', null);
     } catch (err) {
         return next(err);
     }
@@ -195,10 +178,7 @@ GroupController.deleteMemberGroup = async (req, res, next) => {
             return next(new Error('Member is not exist!'));
         }
         await Group.update({ _id: id }, group);
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Delete member success!'
-        });
+        return ResponseHandle.returnSuccess(res, 'Delete member success!', null);
     } catch (err) {
         return next(err);
     }

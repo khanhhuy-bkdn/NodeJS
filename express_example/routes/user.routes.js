@@ -22,5 +22,6 @@ router.put('/users/:id', validate(validation.updateUser), middleware.verifyToken
 router.delete('/users/:id', validate(validation.deleteUser), middleware.verifyToken, UserController.deleteUser)
 router.post('/login', validate(validation.loginUser), UserController.login)
 router.put('/users/:id/updatePassword', validate(validation.updatePassword), middleware.verifyToken, UserController.updatePassword)
+router.post('/upload', UserController.upload)
 
 export default router;
