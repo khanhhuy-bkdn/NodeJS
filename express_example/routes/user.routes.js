@@ -3,6 +3,7 @@ import UserController from '../controllers/user.controller';
 import validation from '../validation/user';
 import validate from 'express-validation';
 import * as middleware from '../middleware/authentication'
+import { apiLimiter } from '../validation/limit'
 const router = new Router();
 
 // Get all users
@@ -22,6 +23,9 @@ router.put('/users/:id', validate(validation.updateUser), middleware.verifyToken
 router.delete('/users/:id', validate(validation.deleteUser), middleware.verifyToken, UserController.deleteUser)
 router.post('/login', validate(validation.loginUser), UserController.login)
 router.put('/users/:id/updatePassword', validate(validation.updatePassword), middleware.verifyToken, UserController.updatePassword)
-router.post('/upload', UserController.upload)
+router.post('/upload', apiLimiter, UserController.upload)
+router.post('/send-mail', validate(validation.sendMail), UserController.sendMail)
+router.post('/reset-password', validate(validation.resetPassword), middleware.verifyTokenForgotPassword, UserController.resetPassword)
+router.post('/reset-password-2', validate(validation.resetPassword), UserController.resetPassword2)
 
 export default router;

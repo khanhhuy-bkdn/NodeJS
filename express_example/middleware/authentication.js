@@ -28,3 +28,25 @@ export const verifyToken = async (req, res, next) => {
         return next(new Error("Invalid authentication!"));
     }
 }
+
+export const verifyTokenForgotPassword = async (req, res, next) => {
+    try {
+        const token = req.query.token;
+        if (!token) {
+            return next(new Error("Not found authentication!"));
+        }
+        const data = await JWT.verify(token, constant.JWT_SECRET_FORGOT_PASSWORD);
+        const id = data._id;
+        if (!id) {
+            return next(new Error("Cannot get _id from jwt payload!"));
+        }
+        const user = await User.findOne({ _id: id }).select('password').lean(true);
+        if (!user) {
+            return next(new Error("User not found!"));
+        }
+        req.user = user;
+        return next();
+    } catch (err) {
+        return next(new Error("Invalid authentication!"));
+    }
+}

@@ -10,12 +10,11 @@ const http = require('http');
 const server = express();
 
 connectToDb();
-
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({
     extended: false
 }));
-
+server.use(express.static('uploads'));
 server.use(user);
 server.use(classes);
 server.use(groups);

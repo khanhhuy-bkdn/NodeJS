@@ -1,5 +1,9 @@
-export default {
-    'port': 3005,
-    'mongoUrl': 'mongodb://localhost:27017/express-example',
-    'bodyLimit': '100kb'
+import config from './db-config'
+import mailConfig from './mail-config'
+import resetPasswordConfig from './reset-password-config'
+
+module.exports = {
+    config,
+    mailConfig,
+    resetPasswordConfig
 }

@@ -35,6 +35,13 @@ let userSchema = new Schema({
     deleteAt: {
         type: Date,
         default: null
+    },
+    resetedAt: {
+        type: Date,
+        default: null
+    },
+    codeReset: {
+        type: Number
     }
 });
 

@@ -49,3 +49,42 @@ exports.updatePassword = {
     verifyPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(50),
   }
 };
+exports.sendMail = {
+  body: {
+    email: Joi.string().email({ minDomainAtoms: 2 }).required().max(150),
+  }
+};
+exports.resetPassword = {
+  body: {
+    newPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(50),
+    confirmedPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/)
+      .required()
+      .min(3)
+      .max(50)
+      .valid(Joi.ref('newPassword')).options({
+        language: {
+          any: {
+            allowOnly: '!!Passwords do not match',
+          }
+        },
+      })
+  }
+};
+exports.resetPassword2 = {
+  body: {
+    codeResrt: Joi.number(),
+    email: Joi.string().email({ minDomainAtoms: 2 }).required().max(150),
+    newPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/).required().min(3).max(50),
+    confirmedPassword: Joi.string().regex(/[a-zA-Z0-9]{3,30}/)
+      .required()
+      .min(3)
+      .max(50)
+      .valid(Joi.ref('newPassword')).options({
+        language: {
+          any: {
+            allowOnly: '!!Passwords do not match',
+          }
+        },
+      })
+  }
+};

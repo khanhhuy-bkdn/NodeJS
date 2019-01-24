@@ -6,4 +6,11 @@ export default class ResponseHandle {
             data
         });
     }
+
+    static returnError(res, err) {
+        return res.status(400).json({
+            isSuccess: false,
+            message: err.message || 'Have error'
+        });
+    }
 }

@@ -3,8 +3,10 @@ import JWT from 'jsonwebtoken';
 import * as constant from './../constant';
 import bcrypt from 'bcrypt';
 import formidable from 'formidable';
-import { ResponseHandle } from './../helpers';
+import { ResponseHandle, RandomNumber } from './../helpers';
 import { userRespository } from '../respositories';
+import { MailService } from '../services';
+import { resetPasswordConfig } from '../config/index'
 
 const UserController = {};
 const salt = bcrypt.genSaltSync(10);
@@ -137,7 +139,7 @@ UserController.updatePassword = async (req, res, next) => {
         if (!isCorrectPassword) {
             return next(new Error('password is not correct!'));
         }
-        await userRespository.update({ _id: user._id }, { password: currentPassword }, next);
+        await userRespository.update({ _id: user._id }, { password: newPassword }, next);
         return ResponseHandle.returnSuccess(res, 'Update password success!', null);
     } catch (err) {
         return next(err);
@@ -148,30 +150,36 @@ UserController.upload = async (req, res, next) => {
     try {
         var form = new formidable.IncomingForm();
         form.uploadDir = "./uploads";
-        form.maxFileSize = 200 * 1024 * 1024; //max 20MB
+        form.maxFieldsSize = 10 * 1024 * 1024; //max 10MB
         form.multiples = true; //chọn nhiều
         form.keepExtensions = true;
+
         form.parse(req, (err, fields, files) => {
             if (err) {
-                res.json({
+                return res.json({
                     isSuccess: false,
                     message: 'Cannot upload file!',
                     err
                 });
             }
-            let arrayOfFiles = files['files'];
+            let arrayOfFiles = [];
+            if (files['files'] instanceof Array) {
+                arrayOfFiles = files['files'];
+            } else {
+                arrayOfFiles.push(files['files']);
+            }
             if (arrayOfFiles.length > 0) {
                 let fileNames = [];
                 arrayOfFiles.forEach((item) => {
                     fileNames.push(item.path.split('\\')[1]);
                 });
-                res.json({
+                return res.json({
                     isSuccess: true,
                     data: fileNames,
                     message: 'Upload success!'
                 });
             } else {
-                res.json({
+                return res.json({
                     isSuccess: false,
                     data: {},
                     message: 'No file is upload!'
@@ -181,6 +189,92 @@ UserController.upload = async (req, res, next) => {
             // res.write('received upload:\n\n');
             // res.end(util.inspect({ fields: fields, files: files }));
         });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+UserController.sendMail = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const user = await userRespository.getOne({
+            where: {
+                email
+            },
+            lean: true,
+            select: '_id'
+        });
+        if (!user) {
+            return ResponseHandle.returnError(res, 'User is not exist!');
+        }
+        //Cách 1
+        // const token = JWT.sign(user, constant.JWT_SECRET_FORGOT_PASSWORD, { expiresIn: resetPasswordConfig.tokenTimeToLive });
+        // await MailService.sendMail(
+        //     'naughty-system',
+        //     email,
+        //     'RESET PASSWORD',
+        //     'reset password',
+        //     `<b>Chúng tôi nhận được yêu cầu đặt lại mật khẩu. 
+        //     Vui lòng click vào link 
+        //     <a href="${resetPasswordConfig.host}/reset-password?token=${token}">này</a>
+        //      để cập nhật mật khẩu của bạn.
+        //     </b>`
+        // );
+
+        //Cách 2
+        const number = RandomNumber.getRndInteger(999999, 100000);
+        await MailService.sendMail(
+            'naughty-system',
+            email,
+            'RESET PASSWORD',
+            'reset password',
+            `<b>Chúng tôi nhận được yêu cầu đặt lại mật khẩu. 
+            Vui lòng nhập mã code này </i>${number}</i>
+             để cập nhật mật khẩu của bạn.
+            </b>`
+        );
+        user.codeReset = number;
+        user.resetedAt = new Date();
+        await userRespository.update({ _id: user._id }, user, next);
+        //-------------------------------------------------------------
+        return ResponseHandle.returnSuccess(res, 'Send mail success!', null);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+UserController.resetPassword = async (req, res, next) => {
+    try {
+        const { newPassword } = req.body;
+        const user = req.user;
+        await userRespository.update({ _id: user._id }, { password: newPassword }, next);
+        return ResponseHandle.returnSuccess(res, 'Reset password success!', null);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+UserController.resetPassword2 = async (req, res, next) => {
+    try {
+        const { email, codeReset, newPassword } = req.body;
+        const user = await userRespository.getOne({
+            where: {
+                email
+            },
+            select: 'password codeReset resetedAt'
+        });
+        if (!user) {
+            return next(new Error('User is not found'));
+        }
+        if (parseInt(codeReset) !== user.codeReset) {
+            return next(new Error('Code is invalid!'));
+        }
+        const newDate = new Date();
+        if ((newDate.getTime() - user.resetedAt.getTime()) / 1000 > resetPasswordConfig.tokenTimeToLive) {
+            return next(new Error('Code is expires!'));
+        }
+        await userRespository.update({ _id: user._id }, { password: newPassword }, next);
+        return ResponseHandle.returnSuccess(res, 'Reset password success!', null);
     } catch (err) {
         return next(err);
     }
