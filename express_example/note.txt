@@ -39,3 +39,12 @@ await User.findOne({ _id: id }).select('password').learn(true)
 -- phân trang
 .skip((page - 1) * limit) // bỏ qua
 .limit() // giới hạn
+
+
+1. Bai toan search
+- search chay: regex
+               index test mongoodb
+- search engine: elastich search.
+
+2. Collection relative (quan he giua cac bang)
+3. Aggregation mongoose
