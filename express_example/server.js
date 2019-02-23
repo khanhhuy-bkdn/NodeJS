@@ -4,34 +4,13 @@ import connectToDb from './db/connect';
 import user from './routes/user.routes';
 import classes from './routes/class.router';
 import groups from './routes/group.router';
-import message from './routes/message.router'
+import message from './routes/message.router';
+import socketHandler from './socket-handler/index'
 
 //const http = require('http');
 const server = express();
-
 const http = require('http').Server(server);
-const io = require('socket.io')(http);
-
-/*
-This code socket
-*/
-io.on('connection', function (socket) {
-    console.log('a user connected');
-    /*
-    **Start initializing event
-    */
-    socket.on('sendingMessage', function (data) {
-        console.log('Get data on event');
-        console.log(data);
-        socket.broadcast.emit('reMessage', data);
-    });
-    socket.on('sendingTyping', function (data) {
-        console.log('Get data on event');
-        console.log(data);
-        socket.broadcast.emit('sendingTyping', data);
-    });
-});
-
+socketHandler.initSocket(http);
 
 connectToDb();
 server.use(bodyParser.json());

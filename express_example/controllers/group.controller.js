@@ -63,7 +63,9 @@ GroupController.getGroupById = async (req, res, next) => {
     }
 };
 
-GroupController.addGroup = async (req, res, next) => {
+GroupController.addGroup = async (req, res, next = (e) => {
+    new Promise.reject(e);
+}) => {
     try {
         const { members, name } = req.body;
         const author = req.user._id;
@@ -94,8 +96,8 @@ GroupController.addGroup = async (req, res, next) => {
         });
         await group.save();
         return ResponseHandle.returnSuccess(res, 'Success!', group);
-    } catch (err) {
-        return next(err);
+    } catch (e) {
+        return next(e);
     }
 }
 

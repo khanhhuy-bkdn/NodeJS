@@ -4,7 +4,8 @@ import * as constant from './../constant';
 
 export const verifyToken = async (req, res, next) => {
     try {
-        const token = req.headers.token || req.body.token || req.query.token;
+        const socket = req.socket;
+        const token = req.query.token || req.headers.token || req.body.token;
         if (!token) {
             return next(new Error("Not found authentication!"));
         }
@@ -23,6 +24,7 @@ export const verifyToken = async (req, res, next) => {
             return next(new Error("User not found!"));
         }
         req.user = user;
+        socket.user = user;
         return next();
     } catch (err) {
         return next(new Error("Invalid authentication!"));

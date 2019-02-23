@@ -55,7 +55,7 @@
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
     $(function () {
-        var socket = io();
+        var socket = io("http://localhost:3000");
         $('form').submit(function (e) {
             e.preventDefault(); // prevents page reloading
             socket.emit('sendingMessage', $('#m').val());
@@ -75,7 +75,25 @@
         socket.on('sendingTyping', function (msg) {
             $('#typing').text(msg);
         });
+        socket.on('error', function (error) {
+            console.log(error)
+        });
     });
+    function createGroup() {
+            socket.emit('creatingGroup', {
+                authorId: 'A',
+                name: 'CHem gio',
+                member: [1,2],
+            }),
+            function(error, data) {
+                if (error) {
+                    console.log(error);
+                    return alert('asdf');
+                }
+                console.log(data);
+            }
+
+        }
 </script>
 <script>
     var socket = io();
@@ -96,6 +114,7 @@
     <ul id="typing"></ul>
     <form action="">
         <input id="m" autocomplete="off" /><button>Send</button>
+        <button onclick="createGroup()">Send</button>
     </form>
 </body>
 
